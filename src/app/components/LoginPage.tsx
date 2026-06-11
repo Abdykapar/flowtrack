@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, Github } from "lucide-react";
+import { api, setToken, type User } from "@/lib/api";
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: (user: User) => void;
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
@@ -10,11 +11,26 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock authentication - in a real app, this would validate credentials
-    onLogin();
+    if (isSignup) {
+      setError("Sign up is not yet available. Please sign in.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const { access_token, user } = await api.auth.login(email, password);
+      setToken(access_token);
+      onLogin(user);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -104,14 +120,27 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               </div>
             )}
 
+            {error && (
+              <p className="text-[12px] text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                {error}
+              </p>
+            )}
+
             {/* Submit button */}
             <button
               type="submit"
-              className="w-full mt-6 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white py-3 rounded-lg font-semibold text-[14px] shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+              disabled={loading}
+              className="w-full mt-6 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white py-3 rounded-lg font-semibold text-[14px] shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{ fontFamily: "Onest, sans-serif" }}
             >
-              {isSignup ? "Create account" : "Sign in"}
-              <ArrowRight size={16} />
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  {isSignup ? "Create account" : "Sign in"}
+                  <ArrowRight size={16} />
+                </>
+              )}
             </button>
           </form>
 
