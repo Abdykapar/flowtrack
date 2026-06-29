@@ -1,18 +1,27 @@
-export type Priority = "high" | "medium" | "low";
-export type TaskStatus = "planned" | "in-progress" | "review" | "completed";
+export type DocumentStatus = "pending" | "in-progress" | "completed" | "overdue";
+
+export interface TaskCategory {
+  id: number;
+  name: string;
+  orderIndex: number;
+}
 
 export interface Task {
   id: number;
   title: string;
-  priority: Priority;
-  status: TaskStatus;
-  estimatedMin: number;
-  actualMin?: number;
-  tags: string[];
-  deadline: string;
-  timerRunning: boolean;
-  progress: number;
-  assignedDate: string;
+  deadlineDays: number;
+  startDate: string | null;
+  endDate: string | null;
+  completionPercent: number;
+  status: DocumentStatus;
+  executorGO: string | null;
+  executorNurzaman: string | null;
+  comment: string | null;
+  isParallel: boolean;
+  parallelGroupId: number | null;
+  attachments: string[];
+  orderIndex: number;
+  category: TaskCategory | null;
 }
 
 export interface User {
@@ -21,7 +30,23 @@ export interface User {
   email: string;
   streak: number;
   planType: string;
+  role: "admin" | "user";
 }
+
+export interface FocusSession {
+  id: number;
+  taskId: number | null;
+  startTime: string;
+  endTime: string | null;
+  paused: boolean;
+  durationMin: number | null;
+}
+
+export interface ActivityItem { day: string; completed: number; created: number; }
+export interface PlannedVsActualItem { week: string; plannedDays: number; avgCompletion: number; }
+export interface FocusScoreItem { day: string; score: number; }
+export interface HeatmapItem { date: string; count: number; }
+export interface CategoryItem { name: string; value: number; }
 
 const BASE = "/api";
 
@@ -67,44 +92,53 @@ export const api = {
     me: () => request<User>("/auth/me"),
   },
   tasks: {
-    list: (params?: { status?: TaskStatus; priority?: Priority }) => {
-      const qs = params
-        ? new URLSearchParams(
-            Object.fromEntries(
-              Object.entries(params).filter(([, v]) => v != null) as [string, string][]
-            )
-          ).toString()
-        : "";
-      return request<Task[]>(`/tasks${qs ? `?${qs}` : ""}`);
+    list: (status?: DocumentStatus) => {
+      const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+      return request<Task[]>(`/tasks${qs}`);
     },
-    create: (data: Omit<Task, "id" | "timerRunning" | "progress">) =>
+    create: (data: Omit<Task, "id" | "category">) =>
       request<Task>("/tasks", {
         method: "POST",
         body: JSON.stringify(data),
       }),
-    update: (id: number, data: Partial<Omit<Task, "id">>) =>
+    update: (id: number, data: Partial<Omit<Task, "id" | "category">>) =>
       request<Task>(`/tasks/${id}`, {
         method: "PUT",
         body: JSON.stringify(data),
       }),
     remove: (id: number) =>
       request<void>(`/tasks/${id}`, { method: "DELETE" }),
-    setStatus: (id: number, status: TaskStatus) =>
+    setStatus: (id: number, status: DocumentStatus) =>
       request<Task>(`/tasks/${id}/status`, {
         method: "PATCH",
         body: JSON.stringify({ status }),
       }),
-    setProgress: (id: number, progress: number) =>
-      request<Task>(`/tasks/${id}/progress`, {
+    setCompletion: (id: number, completionPercent: number) =>
+      request<Task>(`/tasks/${id}/completion`, {
         method: "PATCH",
-        body: JSON.stringify({ progress }),
-      }),
-    toggleTimer: (id: number, timerRunning: boolean) =>
-      request<Task>(`/tasks/${id}/timer`, {
-        method: "PATCH",
-        body: JSON.stringify({ timerRunning }),
+        body: JSON.stringify({ completionPercent }),
       }),
     search: (q: string) =>
       request<Task[]>(`/tasks/search?q=${encodeURIComponent(q)}`),
+  },
+  focusSessions: {
+    list: () => request<FocusSession[]>("/focus-sessions"),
+    create: (taskId?: number) =>
+      request<FocusSession>("/focus-sessions", {
+        method: "POST",
+        body: JSON.stringify({ taskId }),
+      }),
+    update: (id: number, data: { endTime?: string; paused?: boolean; durationMin?: number }) =>
+      request<FocusSession>(`/focus-sessions/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+  },
+  analytics: {
+    activity: () => request<ActivityItem[]>("/analytics/activity"),
+    plannedVsActual: () => request<PlannedVsActualItem[]>("/analytics/planned-vs-actual"),
+    focusScore: () => request<FocusScoreItem[]>("/analytics/focus-score"),
+    heatmap: () => request<HeatmapItem[]>("/analytics/heatmap"),
+    categories: () => request<CategoryItem[]>("/analytics/categories"),
   },
 };
