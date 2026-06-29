@@ -1,0 +1,11 @@
+{
+  "pkg": "flowtrack-ui",
+  "globalName": "FlowTrackUI",
+  "projectId": "b70f16ec-bf2e-46bd-be91-5f4cde1531b1",
+  "shape": "package",
+  "srcDir": "src/app/components/ui",
+  "entry": "src/app/components/ui/index.ts",
+  "buildCmd": "npm run build && .ds-sync/node_modules/.bin/tsc -p tsconfig-ds.json && cp $(ls dist/assets/index-*.css | head -1) dist/assets/ds-styles.css",
+  "cssEntry": "dist/assets/ds-styles.css",
+  "runtimeFontPrefixes": ["Onest", "DM Sans", "JetBrains Mono"]
+}
