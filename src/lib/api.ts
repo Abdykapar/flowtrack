@@ -6,6 +6,19 @@ export interface TaskCategory {
   orderIndex: number;
 }
 
+export interface Role {
+  id: number;
+  name: string;
+}
+
+export interface User {
+  id: number;
+  name: string;
+  surname: string;
+  login: string;
+  role: Role | null;
+}
+
 export interface Task {
   id: number;
   title: string;
@@ -22,15 +35,8 @@ export interface Task {
   attachments: string[];
   orderIndex: number;
   category: TaskCategory | null;
-}
-
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  streak: number;
-  planType: string;
-  role: "admin" | "user";
+  assigneeId: number | null;
+  assignee: User | null;
 }
 
 export interface FocusSession {
@@ -47,6 +53,14 @@ export interface PlannedVsActualItem { week: string; plannedDays: number; avgCom
 export interface FocusScoreItem { day: string; score: number; }
 export interface HeatmapItem { date: string; count: number; }
 export interface CategoryItem { name: string; value: number; }
+
+export interface CreateUserInput {
+  name: string;
+  surname: string;
+  login: string;
+  password: string;
+  roleId?: number | null;
+}
 
 const BASE = "/api";
 
@@ -82,10 +96,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   auth: {
-    login: (email: string, password: string) =>
+    login: (login: string, password: string) =>
       request<{ access_token: string; user: User }>("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ login, password }),
       }),
     logout: () =>
       request<{ message: string }>("/auth/logout", { method: "POST" }),
@@ -96,12 +110,12 @@ export const api = {
       const qs = status ? `?status=${encodeURIComponent(status)}` : "";
       return request<Task[]>(`/tasks${qs}`);
     },
-    create: (data: Omit<Task, "id" | "category">) =>
+    create: (data: Omit<Task, "id" | "category" | "assignee" | "attachments">) =>
       request<Task>("/tasks", {
         method: "POST",
         body: JSON.stringify(data),
       }),
-    update: (id: number, data: Partial<Omit<Task, "id" | "category">>) =>
+    update: (id: number, data: Partial<Omit<Task, "id" | "category" | "assignee" | "attachments">>) =>
       request<Task>(`/tasks/${id}`, {
         method: "PUT",
         body: JSON.stringify(data),
@@ -120,6 +134,37 @@ export const api = {
       }),
     search: (q: string) =>
       request<Task[]>(`/tasks/search?q=${encodeURIComponent(q)}`),
+  },
+  users: {
+    list: () => request<User[]>("/users"),
+    get: (id: number) => request<User>(`/users/${id}`),
+    create: (data: CreateUserInput) =>
+      request<User>("/users", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: number, data: Partial<CreateUserInput>) =>
+      request<User>(`/users/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    remove: (id: number) =>
+      request<void>(`/users/${id}`, { method: "DELETE" }),
+  },
+  roles: {
+    list: () => request<Role[]>("/roles"),
+    create: (name: string) =>
+      request<Role>("/roles", {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      }),
+    update: (id: number, name: string) =>
+      request<Role>(`/roles/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ name }),
+      }),
+    remove: (id: number) =>
+      request<void>(`/roles/${id}`, { method: "DELETE" }),
   },
   focusSessions: {
     list: () => request<FocusSession[]>("/focus-sessions"),

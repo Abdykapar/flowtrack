@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, Github } from "lucide-react";
+import { Zap, User as UserIcon, Lock, Eye, EyeOff, ArrowRight, Github } from "lucide-react";
 import { api, setToken, type User } from "@/lib/api";
 
 interface LoginPageProps {
@@ -7,7 +7,7 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
-  const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
@@ -23,7 +23,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     setError("");
     setLoading(true);
     try {
-      const { access_token, user } = await api.auth.login(email, password);
+      const { access_token, user } = await api.auth.login(login, password);
       setToken(access_token);
       onLogin(user);
     } catch (err) {
@@ -59,19 +59,19 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         {/* Login form */}
         <div className="bg-[#171A21] border border-white/8 rounded-2xl p-8 shadow-2xl backdrop-blur-sm">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email input */}
+            {/* Login input */}
             <div>
-              <label htmlFor="email" className="block text-[12px] font-semibold text-slate-400 mb-2 uppercase tracking-wider">
-                Email
+              <label htmlFor="login" className="block text-[12px] font-semibold text-slate-400 mb-2 uppercase tracking-wider">
+                Login
               </label>
               <div className="relative">
-                <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600" />
+                <UserIcon size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600" />
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  id="login"
+                  type="text"
+                  value={login}
+                  onChange={(e) => setLogin(e.target.value)}
+                  placeholder="your username"
                   className="w-full bg-[#1E2330] border border-white/8 rounded-lg pl-10 pr-4 py-2.5 text-[14px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                   required
                 />
