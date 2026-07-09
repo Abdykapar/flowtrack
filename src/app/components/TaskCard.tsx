@@ -6,10 +6,12 @@ export function TaskCard({
   task,
   onClick,
   onDelete,
+  canDelete,
 }: {
   task: Task;
   onClick: () => void;
   onDelete: (id: number) => void;
+  canDelete: boolean;
 }) {
   const isOverdue =
     task.status === "overdue" ||
@@ -24,15 +26,17 @@ export function TaskCard({
         <h4 className="text-[12px] font-medium text-slate-200 leading-relaxed flex-1">
           {task.title}
         </h4>
-        <button
-          className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 hover:text-red-400 p-0.5 shrink-0"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (window.confirm(`Delete task "${task.title}"?`)) onDelete(task.id);
-          }}
-        >
-          <Trash2 size={12} />
-        </button>
+        {canDelete && (
+          <button
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 hover:text-red-400 p-0.5 shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.confirm(`Delete task "${task.title}"?`)) onDelete(task.id);
+            }}
+          >
+            <Trash2 size={12} />
+          </button>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-1 mb-3">

@@ -6,7 +6,7 @@ import { UserFormModal } from "../components/UserFormModal";
 import { fmtDate, statusBadge, statusLabel } from "../lib/format";
 
 export default function UsersPage() {
-  const { users, roles, tasks, createUser, updateUser, deleteUser } = useAppData();
+  const { users, roles, tasks, isAdmin, createUser, updateUser, deleteUser } = useAppData();
   const [selectedId, setSelectedId] = useState<number | null>(users[0]?.id ?? null);
   const [form, setForm] = useState<{ mode: "create" | "edit"; user?: User } | null>(null);
 
@@ -31,13 +31,15 @@ export default function UsersPage() {
   return (
     <div className="h-full flex overflow-hidden">
       <div className="w-[300px] shrink-0 border-r border-white/5 overflow-y-auto p-4 space-y-2">
-        <button
-          onClick={() => setForm({ mode: "create" })}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-[12px] font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all mb-1"
-        >
-          <Plus size={13} />
-          New User
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setForm({ mode: "create" })}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-[12px] font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all mb-1"
+          >
+            <Plus size={13} />
+            New User
+          </button>
+        )}
 
         {users.length === 0 && (
           <div className="text-[12px] text-slate-600 text-center py-8">No users yet</div>
@@ -75,22 +77,24 @@ export default function UsersPage() {
                 </span>
                 <span className="text-[10px] text-slate-600 font-mono">{count} tasks</span>
               </div>
-              <div className="flex flex-col gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={(e) => { e.stopPropagation(); setForm({ mode: "edit", user: u }); }}
-                  className="text-slate-500 hover:text-slate-200 p-1 hover:bg-white/8 rounded-md transition-all"
-                  title="Edit user"
-                >
-                  <Pencil size={11} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDelete(u); }}
-                  className="text-slate-500 hover:text-red-400 p-1 hover:bg-white/8 rounded-md transition-all"
-                  title="Delete user"
-                >
-                  <Trash2 size={11} />
-                </button>
-              </div>
+              {isAdmin && (
+                <div className="flex flex-col gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setForm({ mode: "edit", user: u }); }}
+                    className="text-slate-500 hover:text-slate-200 p-1 hover:bg-white/8 rounded-md transition-all"
+                    title="Edit user"
+                  >
+                    <Pencil size={11} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(u); }}
+                    className="text-slate-500 hover:text-red-400 p-1 hover:bg-white/8 rounded-md transition-all"
+                    title="Delete user"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}
@@ -164,7 +168,7 @@ export default function UsersPage() {
         )}
       </div>
 
-      {form && (
+      {isAdmin && form && (
         <UserFormModal
           mode={form.mode}
           user={form.user}

@@ -18,7 +18,7 @@ const NAV = [
   { path: "/tasks", label: "Tasks", icon: CheckSquare },
   { path: "/timeline", label: "Timeline", icon: CalendarDays },
   { path: "/analytics", label: "Analytics", icon: BarChart3 },
-  { path: "/focus", label: "Focus Mode", icon: TimerIcon },
+  // { path: "/focus", label: "Focus Mode", icon: TimerIcon },
   { path: "/users", label: "Users", icon: Users },
   { path: "/roles", label: "Roles", icon: Shield },
 ] as const;
@@ -32,6 +32,9 @@ export function Sidebar({
   user: User;
   inProgressCount: number;
 }) {
+  const isAdmin = user.role?.name === "admin";
+  const nav = isAdmin ? NAV : NAV.filter((item) => item.path !== "/users" && item.path !== "/roles");
+
   return (
     <aside className="w-[220px] shrink-0 flex flex-col h-full border-r border-white/5 bg-[#0D1017]">
       <div className="px-5 h-14 flex items-center gap-2.5 border-b border-white/5">
@@ -50,7 +53,7 @@ export function Sidebar({
         <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 pt-1 pb-2">
           Workspace
         </p>
-        {NAV.map(({ path, label, icon: Icon }) => (
+        {nav.map(({ path, label, icon: Icon }) => (
           <NavLink
             key={path}
             to={path}
@@ -85,10 +88,10 @@ export function Sidebar({
       <div className="mx-3 h-px bg-white/5" />
 
       <div className="px-3 py-3 space-y-0.5">
-        <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all">
+        {/* <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all">
           <Settings size={14} />
           Settings
-        </button>
+        </button> */}
         <button
           onClick={onLogout}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-slate-500 hover:text-red-400 hover:bg-white/5 transition-all"
@@ -101,7 +104,9 @@ export function Sidebar({
             {user.name.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[12px] text-slate-200 font-medium truncate">{user.name} {user.surname}</div>
+            <div className="text-[12px] text-slate-200 font-medium truncate">
+              {user.name} {user.surname}
+            </div>
             <div className="text-[10px] text-slate-600 truncate">
               {user.role?.name ?? "No role"}
             </div>

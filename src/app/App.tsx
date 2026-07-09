@@ -1,5 +1,6 @@
+import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router";
-import { AppDataProvider } from "./context/AppDataContext";
+import { AppDataProvider, useAppData } from "./context/AppDataContext";
 import AppLayout from "./layout/AppLayout";
 import LoginRoute from "./pages/LoginRoute";
 import DashboardPage from "./pages/DashboardPage";
@@ -9,6 +10,12 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import FocusPage from "./pages/FocusPage";
 import UsersPage from "./pages/UsersPage";
 import RolesPage from "./pages/RolesPage";
+
+function AdminRoute({ children }: { children: ReactNode }) {
+  const { isAdmin } = useAppData();
+  if (!isAdmin) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}
 
 export default function App() {
   return (
@@ -22,8 +29,8 @@ export default function App() {
           <Route path="timeline" element={<TimelinePage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="focus" element={<FocusPage />} />
-          <Route path="users" element={<UsersPage />} />
-          <Route path="roles" element={<RolesPage />} />
+          <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
+          <Route path="roles" element={<AdminRoute><RolesPage /></AdminRoute>} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

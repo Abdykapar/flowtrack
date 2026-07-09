@@ -94,6 +94,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function requestUpload<T>(path: string, formData: FormData): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { message?: string }).message ?? `HTTP ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 export const api = {
   auth: {
     login: (login: string, password: string) =>
@@ -134,6 +150,15 @@ export const api = {
       }),
     search: (q: string) =>
       request<Task[]>(`/tasks/search?q=${encodeURIComponent(q)}`),
+    uploadAttachment: (id: number, file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return requestUpload<Task>(`/tasks/${id}/attachments`, formData);
+    },
+    removeAttachment: (id: number, filename: string) =>
+      request<void>(`/tasks/${id}/attachments/${encodeURIComponent(filename)}`, { method: "DELETE" }),
+    attachmentDownloadUrl: (id: number, filename: string) =>
+      `${BASE}/tasks/${id}/attachments/${encodeURIComponent(filename)}`,
   },
   users: {
     list: () => request<User[]>("/users"),

@@ -7,6 +7,7 @@ export default function TasksPage() {
   const {
     tasks,
     users,
+    isAdmin,
     taskModal,
     taskForm,
     openTaskModal,
@@ -18,6 +19,8 @@ export default function TasksPage() {
     setStatus,
     deleteTask,
     submitTaskForm,
+    uploadAttachment,
+    removeAttachment,
   } = useAppData();
 
   return (
@@ -27,6 +30,7 @@ export default function TasksPage() {
         onTaskClick={openTaskModal}
         onDelete={deleteTask}
         onAddClick={openCreateForm}
+        canManage={isAdmin}
       />
 
       {taskModal && (
@@ -37,10 +41,13 @@ export default function TasksPage() {
           onStatusChange={setStatus}
           onEdit={openEditForm}
           onDelete={deleteTask}
+          onUploadAttachment={uploadAttachment}
+          onRemoveAttachment={removeAttachment}
+          canManage={isAdmin}
         />
       )}
 
-      {taskForm && (
+      {isAdmin && taskForm && (
         <TaskFormModal
           mode={taskForm.mode}
           task={taskForm.task}

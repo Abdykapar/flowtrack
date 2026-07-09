@@ -35,6 +35,7 @@ type TaskFormState = { mode: "create" | "edit"; task?: Task };
 interface AppDataValue {
   booting: boolean;
   currentUser: User | null;
+  isAdmin: boolean;
   tasks: Task[];
   users: User[];
   roles: Role[];
@@ -52,6 +53,8 @@ interface AppDataValue {
   setStatus: (id: number, status: DocumentStatus) => void;
   deleteTask: (id: number) => void;
   submitTaskForm: (data: Omit<Task, "id" | "category" | "assignee" | "attachments">) => Promise<void>;
+  uploadAttachment: (id: number, file: File) => Promise<void>;
+  removeAttachment: (id: number, filename: string) => Promise<void>;
   createUser: (data: CreateUserInput) => Promise<void>;
   updateUser: (id: number, data: Partial<CreateUserInput>) => Promise<void>;
   deleteUser: (id: number) => Promise<void>;
@@ -71,6 +74,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [analytics, setAnalytics] = useState<Analytics>(EMPTY_ANALYTICS);
   const [taskModal, setTaskModal] = useState<Task | null>(null);
   const [taskForm, setTaskForm] = useState<TaskFormState | null>(null);
+  const isAdmin = currentUser?.role?.name === "admin";
 
   async function loadAnalytics() {
     const [activity, plannedVsActual, focusScore, heatmap, categories] = await Promise.all([
@@ -119,6 +123,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const markDone = (id: number) => {
+    if (!isAdmin) return;
     api.tasks.setStatus(id, "completed").then((updated) => {
       setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
       setTaskModal(null);
@@ -126,18 +131,21 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setStatus = (id: number, status: DocumentStatus) => {
+    if (!isAdmin) return;
     api.tasks.setStatus(id, status).then((updated) =>
       setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
     );
   };
 
   const deleteTask = (id: number) => {
+    if (!isAdmin) return;
     api.tasks.remove(id).then(() =>
       setTasks((prev) => prev.filter((t) => t.id !== id))
     );
   };
 
   const submitTaskForm = async (data: Omit<Task, "id" | "category" | "assignee" | "attachments">) => {
+    if (!isAdmin) return;
     if (taskForm?.mode === "edit" && taskForm.task) {
       const updated = await api.tasks.update(taskForm.task.id, data);
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
@@ -149,40 +157,67 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setTaskForm(null);
   };
 
+  const uploadAttachment = async (id: number, file: File) => {
+    if (!isAdmin) return;
+    const updated = await api.tasks.uploadAttachment(id, file);
+    setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    setTaskModal((prev) => (prev && prev.id === id ? updated : prev));
+  };
+
+  const removeAttachment = async (id: number, filename: string) => {
+    if (!isAdmin) return;
+    await api.tasks.removeAttachment(id, filename);
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, attachments: t.attachments.filter((a) => a !== filename) } : t))
+    );
+    setTaskModal((prev) =>
+      prev && prev.id === id ? { ...prev, attachments: prev.attachments.filter((a) => a !== filename) } : prev
+    );
+  };
+
   const createUser = async (data: CreateUserInput) => {
+    if (!isAdmin) return;
     const created = await api.users.create(data);
     setUsers((prev) => [...prev, created]);
   };
 
   const updateUser = async (id: number, data: Partial<CreateUserInput>) => {
+    if (!isAdmin) return;
     const updated = await api.users.update(id, data);
     setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
   };
 
   const deleteUser = async (id: number) => {
+    if (!isAdmin) return;
     await api.users.remove(id);
     setUsers((prev) => prev.filter((u) => u.id !== id));
   };
 
   const createRole = async (name: string) => {
+    if (!isAdmin) return;
     const created = await api.roles.create(name);
     setRoles((prev) => [...prev, created]);
   };
 
   const updateRole = async (id: number, name: string) => {
+    if (!isAdmin) return;
     const updated = await api.roles.update(id, name);
     setRoles((prev) => prev.map((r) => (r.id === id ? updated : r)));
   };
 
   const deleteRole = async (id: number) => {
+    if (!isAdmin) return;
     await api.roles.remove(id);
     setRoles((prev) => prev.filter((r) => r.id !== id));
   };
 
+  const visibleTasks = isAdmin ? tasks : tasks.filter((t) => t.assigneeId === currentUser?.id);
+
   const value: AppDataValue = {
     booting,
     currentUser,
-    tasks,
+    isAdmin,
+    tasks: visibleTasks,
     users,
     roles,
     analytics,
@@ -199,6 +234,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setStatus,
     deleteTask,
     submitTaskForm,
+    uploadAttachment,
+    removeAttachment,
     createUser,
     updateUser,
     deleteUser,

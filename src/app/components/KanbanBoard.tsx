@@ -8,11 +8,13 @@ export function KanbanBoard({
   onTaskClick,
   onDelete,
   onAddClick,
+  canManage,
 }: {
   tasks: Task[];
   onTaskClick: (t: Task) => void;
   onDelete: (id: number) => void;
   onAddClick: () => void;
+  canManage: boolean;
 }) {
   const cols: { id: DocumentStatus; label: string }[] = [
     { id: "pending", label: "Pending" },
@@ -68,7 +70,13 @@ export function KanbanBoard({
 
               <div className="flex-1 space-y-2 overflow-y-auto pr-0.5">
                 {colTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} onDelete={onDelete} />
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onClick={() => onTaskClick(task)}
+                    onDelete={onDelete}
+                    canDelete={canManage}
+                  />
                 ))}
                 {colTasks.length === 0 && (
                   <div className="h-20 border border-dashed border-white/8 rounded-xl flex items-center justify-center">
@@ -81,14 +89,16 @@ export function KanbanBoard({
         })}
       </div>
 
-      <button
-        onClick={onAddClick}
-        className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-xl text-white text-[13px] font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.03] transition-all"
-        style={{ fontFamily: "Onest, sans-serif" }}
-      >
-        <Plus size={14} />
-        New Task
-      </button>
+      {canManage && (
+        <button
+          onClick={onAddClick}
+          className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-xl text-white text-[13px] font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.03] transition-all"
+          style={{ fontFamily: "Onest, sans-serif" }}
+        >
+          <Plus size={14} />
+          New Task
+        </button>
+      )}
     </div>
   );
 }

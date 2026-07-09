@@ -1,15 +1,19 @@
+import { useRef, useState } from "react";
 import {
   Activity,
   AlertCircle,
   CheckCircle2,
+  Download,
+  Loader2,
   MoreHorizontal,
   Paperclip,
   Pencil,
   Trash2,
+  UploadCloud,
   Users,
   X,
 } from "lucide-react";
-import type { DocumentStatus, Task } from "@/lib/api";
+import { api, type DocumentStatus, type Task } from "@/lib/api";
 import { fmtDate, statusBadge, statusLabel } from "../lib/format";
 
 export function TaskModal({
@@ -19,6 +23,9 @@ export function TaskModal({
   onStatusChange,
   onEdit,
   onDelete,
+  onUploadAttachment,
+  onRemoveAttachment,
+  canManage,
 }: {
   task: Task;
   onClose: () => void;
@@ -26,7 +33,30 @@ export function TaskModal({
   onStatusChange: (id: number, status: DocumentStatus) => void;
   onEdit: (task: Task) => void;
   onDelete: (id: number) => void;
+  onUploadAttachment: (id: number, file: File) => Promise<void>;
+  onRemoveAttachment: (id: number, filename: string) => Promise<void>;
+  canManage: boolean;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const canComplete = task.attachments.length > 0;
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      await onUploadAttachment(task.id, file);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black/65 backdrop-blur-sm z-50 flex items-center justify-center p-4"
@@ -64,25 +94,29 @@ export function TaskModal({
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={() => onEdit(task)}
-                className="text-slate-600 hover:text-slate-300 transition-colors p-1 hover:bg-white/6 rounded-lg"
-                title="Edit task"
-              >
-                <Pencil size={14} />
-              </button>
-              <button
-                onClick={() => {
-                  if (window.confirm(`Delete task "${task.title}"?`)) {
-                    onDelete(task.id);
-                    onClose();
-                  }
-                }}
-                className="text-slate-600 hover:text-red-400 transition-colors p-1 hover:bg-white/6 rounded-lg"
-                title="Delete task"
-              >
-                <Trash2 size={14} />
-              </button>
+              {canManage && (
+                <button
+                  onClick={() => onEdit(task)}
+                  className="text-slate-600 hover:text-slate-300 transition-colors p-1 hover:bg-white/6 rounded-lg"
+                  title="Edit task"
+                >
+                  <Pencil size={14} />
+                </button>
+              )}
+              {canManage && (
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Delete task "${task.title}"?`)) {
+                      onDelete(task.id);
+                      onClose();
+                    }
+                  }}
+                  className="text-slate-600 hover:text-red-400 transition-colors p-1 hover:bg-white/6 rounded-lg"
+                  title="Delete task"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
               <button
                 onClick={onClose}
                 className="text-slate-600 hover:text-slate-300 transition-colors p-1 hover:bg-white/6 rounded-lg"
@@ -175,26 +209,68 @@ export function TaskModal({
           )}
 
           {/* Attachments */}
-          {task.attachments.length > 0 && (
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-600 mb-1">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-600">
                 <Paperclip size={10} />
-                <span>{task.attachments.length} attachment{task.attachments.length !== 1 ? "s" : ""}</span>
+                <span>
+                  {task.attachments.length > 0
+                    ? `${task.attachments.length} attachment${task.attachments.length !== 1 ? "s" : ""}`
+                    : "No attachments"}
+                </span>
               </div>
-              {task.attachments.map((att, i) => (
+              {canManage && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/8 text-[11px] text-slate-400 hover:text-slate-200 transition-all disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 size={11} className="animate-spin" /> : <UploadCloud size={11} />}
+                  {uploading ? "Uploading…" : "Upload file"}
+                </button>
+              )}
+              <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
+            </div>
+            {uploadError && <p className="text-[11px] text-red-400">{uploadError}</p>}
+            {task.attachments.map((att, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 p-2 rounded-lg bg-white/4 border border-white/6 hover:border-white/12 transition-all text-[12px] text-slate-300"
+              >
                 <a
-                  key={i}
-                  href={att}
+                  href={`/uploads/${att}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-2 p-2 rounded-lg bg-white/4 border border-white/6 hover:border-white/12 transition-all text-[12px] text-slate-300"
+                  className="flex items-center gap-2 flex-1 min-w-0"
                 >
                   <Paperclip size={12} className="text-slate-500 shrink-0" />
                   <span className="truncate">{att}</span>
                 </a>
-              ))}
-            </div>
-          )}
+                <a
+                  href={api.tasks.attachmentDownloadUrl(task.id, att)}
+                  className="text-slate-600 hover:text-indigo-400 transition-colors p-0.5 shrink-0"
+                  title="Download attachment"
+                >
+                  <Download size={12} />
+                </a>
+                {canManage && (
+                  <button
+                    onClick={() => onRemoveAttachment(task.id, att)}
+                    className="text-slate-600 hover:text-red-400 transition-colors p-0.5 shrink-0"
+                    title="Remove attachment"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            ))}
+            {canManage && !canComplete && task.status !== "completed" && (
+              <p className="text-[11px] text-amber-400/80 flex items-center gap-1.5 pt-0.5">
+                <AlertCircle size={11} />
+                Upload a file to mark this task done
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="px-5 py-4 border-t border-white/6 flex items-center justify-between bg-[#13161E]">
@@ -202,26 +278,30 @@ export function TaskModal({
             <MoreHorizontal size={12} />
             More
           </button>
-          <div className="flex items-center gap-2">
-            {task.status === "pending" && (
-              <button
-                onClick={() => { onStatusChange(task.id, "in-progress"); onClose(); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/12 hover:bg-amber-500/20 text-[12px] text-amber-400 border border-amber-500/20 transition-all"
-              >
-                <Activity size={10} />
-                Start Work
-              </button>
-            )}
-            {task.status !== "completed" && (
-              <button
-                onClick={() => onMarkDone(task.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-[12px] text-white transition-all font-medium"
-              >
-                <CheckCircle2 size={10} />
-                Mark Done
-              </button>
-            )}
-          </div>
+          {canManage && (
+            <div className="flex items-center gap-2">
+              {task.status === "pending" && (
+                <button
+                  onClick={() => { onStatusChange(task.id, "in-progress"); onClose(); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/12 hover:bg-amber-500/20 text-[12px] text-amber-400 border border-amber-500/20 transition-all"
+                >
+                  <Activity size={10} />
+                  Start Work
+                </button>
+              )}
+              {task.status !== "completed" && (
+                <button
+                  onClick={() => onMarkDone(task.id)}
+                  disabled={!canComplete}
+                  title={canComplete ? undefined : "Upload a file first to complete this task"}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-[12px] text-white transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-500"
+                >
+                  <CheckCircle2 size={10} />
+                  Mark Done
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
