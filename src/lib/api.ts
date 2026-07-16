@@ -115,41 +115,41 @@ export const api = {
     login: (login: string, password: string) =>
       request<{ access_token: string; user: User }>("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ login, password }),
+        body: JSON.stringify({ login, password })
       }),
-    logout: () =>
-      request<{ message: string }>("/auth/logout", { method: "POST" }),
-    me: () => request<User>("/auth/me"),
+    logout: () => request<{ message: string }>("/auth/logout", { method: "POST" }),
+    me: () => request<User>("/auth/me")
   },
   tasks: {
-    list: (status?: DocumentStatus) => {
-      const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+    list: (status?: DocumentStatus, assigneeId?: number) => {
+      const params = new URLSearchParams();
+      if (status) params.set("status", status);
+      if (assigneeId != null) params.set("assigneeId", String(assigneeId));
+      const qs = params.toString() ? `?${params.toString()}` : "";
       return request<Task[]>(`/tasks${qs}`);
     },
     create: (data: Omit<Task, "id" | "category" | "assignee" | "attachments">) =>
       request<Task>("/tasks", {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify(data)
       }),
     update: (id: number, data: Partial<Omit<Task, "id" | "category" | "assignee" | "attachments">>) =>
       request<Task>(`/tasks/${id}`, {
         method: "PUT",
-        body: JSON.stringify(data),
+        body: JSON.stringify(data)
       }),
-    remove: (id: number) =>
-      request<void>(`/tasks/${id}`, { method: "DELETE" }),
+    remove: (id: number) => request<void>(`/tasks/${id}`, { method: "DELETE" }),
     setStatus: (id: number, status: DocumentStatus) =>
       request<Task>(`/tasks/${id}/status`, {
         method: "PATCH",
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status })
       }),
     setCompletion: (id: number, completionPercent: number) =>
       request<Task>(`/tasks/${id}/completion`, {
         method: "PATCH",
-        body: JSON.stringify({ completionPercent }),
+        body: JSON.stringify({ completionPercent })
       }),
-    search: (q: string) =>
-      request<Task[]>(`/tasks/search?q=${encodeURIComponent(q)}`),
+    search: (q: string) => request<Task[]>(`/tasks/search?q=${encodeURIComponent(q)}`),
     uploadAttachment: (id: number, file: File) => {
       const formData = new FormData();
       formData.append("file", file);
@@ -158,7 +158,7 @@ export const api = {
     removeAttachment: (id: number, filename: string) =>
       request<void>(`/tasks/${id}/attachments/${encodeURIComponent(filename)}`, { method: "DELETE" }),
     attachmentDownloadUrl: (id: number, filename: string) =>
-      `${BASE}/tasks/${id}/attachments/${encodeURIComponent(filename)}`,
+      `${BASE}/tasks/${id}/attachments/${encodeURIComponent(filename)}`
   },
   users: {
     list: () => request<User[]>("/users"),
@@ -166,49 +166,47 @@ export const api = {
     create: (data: CreateUserInput) =>
       request<User>("/users", {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify(data)
       }),
     update: (id: number, data: Partial<CreateUserInput>) =>
       request<User>(`/users/${id}`, {
         method: "PUT",
-        body: JSON.stringify(data),
+        body: JSON.stringify(data)
       }),
-    remove: (id: number) =>
-      request<void>(`/users/${id}`, { method: "DELETE" }),
+    remove: (id: number) => request<void>(`/users/${id}`, { method: "DELETE" })
   },
   roles: {
     list: () => request<Role[]>("/roles"),
     create: (name: string) =>
       request<Role>("/roles", {
         method: "POST",
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name })
       }),
     update: (id: number, name: string) =>
       request<Role>(`/roles/${id}`, {
         method: "PUT",
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name })
       }),
-    remove: (id: number) =>
-      request<void>(`/roles/${id}`, { method: "DELETE" }),
+    remove: (id: number) => request<void>(`/roles/${id}`, { method: "DELETE" })
   },
   focusSessions: {
     list: () => request<FocusSession[]>("/focus-sessions"),
     create: (taskId?: number) =>
       request<FocusSession>("/focus-sessions", {
         method: "POST",
-        body: JSON.stringify({ taskId }),
+        body: JSON.stringify({ taskId })
       }),
     update: (id: number, data: { endTime?: string; paused?: boolean; durationMin?: number }) =>
       request<FocusSession>(`/focus-sessions/${id}`, {
         method: "PATCH",
-        body: JSON.stringify(data),
-      }),
+        body: JSON.stringify(data)
+      })
   },
   analytics: {
     activity: () => request<ActivityItem[]>("/analytics/activity"),
     plannedVsActual: () => request<PlannedVsActualItem[]>("/analytics/planned-vs-actual"),
     focusScore: () => request<FocusScoreItem[]>("/analytics/focus-score"),
     heatmap: () => request<HeatmapItem[]>("/analytics/heatmap"),
-    categories: () => request<CategoryItem[]>("/analytics/categories"),
-  },
+    categories: () => request<CategoryItem[]>("/analytics/categories")
+  }
 };

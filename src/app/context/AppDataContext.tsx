@@ -93,7 +93,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     api.auth.me()
       .then((user) => {
         setCurrentUser(user);
-        return Promise.all([api.tasks.list(), api.users.list(), api.roles.list(), loadAnalytics()]);
+        const tasksPromise =
+          user.role?.name === "admin" ? api.tasks.list() : api.tasks.list(undefined, user.id);
+        return Promise.all([tasksPromise, api.users.list(), api.roles.list(), loadAnalytics()]);
       })
       .then(([loadedTasks, loadedUsers, loadedRoles]) => {
         setTasks(loadedTasks as Task[]);
@@ -106,7 +108,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const login = (user: User) => {
     setCurrentUser(user);
-    api.tasks.list().then(setTasks);
+    const tasksPromise = user.role?.name === "admin" ? api.tasks.list() : api.tasks.list(undefined, user.id);
+    tasksPromise.then(setTasks);
     api.users.list().then(setUsers).catch(() => {});
     api.roles.list().then(setRoles).catch(() => {});
     loadAnalytics().catch(() => {});
