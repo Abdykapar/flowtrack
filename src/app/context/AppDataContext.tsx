@@ -214,13 +214,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setRoles((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const visibleTasks = isAdmin ? tasks : tasks.filter((t) => t.assigneeId === currentUser?.id);
-
   const value: AppDataValue = {
     booting,
     currentUser,
     isAdmin,
-    tasks: visibleTasks,
+    tasks,
     users,
     roles,
     analytics,

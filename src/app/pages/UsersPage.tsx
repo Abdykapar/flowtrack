@@ -11,7 +11,7 @@ export default function UsersPage() {
   const [form, setForm] = useState<{ mode: "create" | "edit"; user?: User } | null>(null);
 
   const selectedUser = users.find((u) => u.id === selectedId) ?? null;
-  const userTasks = selectedUser ? tasks.filter((t) => t.assigneeId === selectedUser.id) : [];
+  const userTasks = selectedUser ? tasks.filter((t) => t.assignee?.id === selectedUser.id) : [];
 
   const handleDelete = (u: User) => {
     if (!window.confirm(`Delete user "${u.name} ${u.surname}"?`)) return;
@@ -45,7 +45,7 @@ export default function UsersPage() {
           <div className="text-[12px] text-slate-600 text-center py-8">No users yet</div>
         )}
         {users.map((u) => {
-          const count = tasks.filter((t) => t.assigneeId === u.id).length;
+          const count = tasks.filter((t) => t.assignee?.id === u.id).length;
           const active = u.id === selectedId;
           return (
             <div

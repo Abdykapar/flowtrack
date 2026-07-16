@@ -21,7 +21,7 @@ const labelClass = "block text-[11px] font-semibold text-slate-500 mb-1.5 upperc
 export function TaskFormModal({ mode, task, users, onClose, onSubmit }: TaskFormModalProps) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [status, setStatus] = useState<DocumentStatus>(task?.status ?? "pending");
-  const [assigneeId, setAssigneeId] = useState<string>(task?.assigneeId != null ? String(task.assigneeId) : "");
+  const [assigneeId, setAssigneeId] = useState<string>(task?.assignee?.id != null ? String(task.assignee.id) : "");
   const [startDate, setStartDate] = useState(task?.startDate?.slice(0, 10) ?? "");
   const [endDate, setEndDate] = useState(task?.endDate?.slice(0, 10) ?? "");
   const [deadlineDays, setDeadlineDays] = useState(String(task?.deadlineDays ?? 14));
